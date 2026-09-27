@@ -31,7 +31,8 @@ import SpreadIndicator from '@/components/common/SpreadIndicator';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 import { useSlippageTolerancePreference } from '@/hooks/useSlippageTolerancePreference';
-
+import { useGlobalPause } from '@/hooks/useGlobalPause';
+import { UnavailableAction } from '@/components/ui/unavailable-action';
 export interface BuySellTradeParams {
 	creatorId?: string;
 	side: 'buy' | 'sell';
@@ -107,6 +108,7 @@ export const BuySellKeyFlow: React.FC<BuySellKeyFlowProps> = ({
 	>(null);
 	const [confirmationOpen, setConfirmationOpen] = useState(false);
 	const [internalSubmitting, setInternalSubmitting] = useState(false);
+	const { paused } = useGlobalPause();
 
 	const isSubmitting = externalIsSubmitting || internalSubmitting;
 
@@ -489,27 +491,30 @@ export const BuySellKeyFlow: React.FC<BuySellKeyFlowProps> = ({
 			)}
 
 			{/* Review / Proceed to Confirmation Button */}
-			<Button
-				type="button"
-				onClick={handleReviewOrder}
-				disabled={
-					!isValid ||
-					isSubmitting ||
-					(impactWarningActive && !impactAcknowledged)
-				}
-				data-testid="trade-review-button"
-				className={cn(
-					'w-full rounded-xl py-3 font-bold text-sm shadow-md transition-all',
-					side === 'buy'
-						? 'bg-amber-400 hover:bg-amber-300 text-slate-950'
-						: 'bg-rose-500 hover:bg-rose-400 text-white'
-				)}
-			>
-				<span className="flex items-center justify-center gap-1.5">
-					{side === 'buy' ? 'Review Buy Order' : 'Review Sell Order'}
-					<ArrowRight className="h-4 w-4" />
-				</span>
-			</Button>
+			<UnavailableAction disabled={paused} reason="Trading is currently paused">
+				<Button
+					type="button"
+					onClick={handleReviewOrder}
+					disabled={
+						!isValid ||
+						isSubmitting ||
+						(impactWarningActive && !impactAcknowledged) ||
+						paused
+					}
+					data-testid="trade-review-button"
+					className={cn(
+						'w-full rounded-xl py-3 font-bold text-sm shadow-md transition-all',
+						side === 'buy'
+							? 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+							: 'bg-rose-500 hover:bg-rose-400 text-white'
+					)}
+				>
+					<span className="flex items-center justify-center gap-1.5">
+						{side === 'buy' ? 'Review Buy Order' : 'Review Sell Order'}
+						<ArrowRight className="h-4 w-4" />
+					</span>
+				</Button>
+			</UnavailableAction>
 
 			{/* Confirmation Modal */}
 			<TradeConfirmationModal

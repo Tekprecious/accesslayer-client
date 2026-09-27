@@ -55,6 +55,8 @@ import {
 import type { KeyConfig } from '@/services/course.service';
 import SpreadIndicator from '@/components/common/SpreadIndicator';
 import { useSlippageTolerancePreference } from '@/hooks/useSlippageTolerancePreference';
+import { useGlobalPause } from '@/hooks/useGlobalPause';
+import { UnavailableAction } from '@/components/ui/unavailable-action';
 
 export type TradeSide = 'buy' | 'sell';
 
@@ -139,6 +141,7 @@ const TradeDialog: React.FC<TradeDialogProps> = ({
 	// capture whatever had focus right before the dialog opened ourselves
 	// and restore it in onCloseAutoFocus instead.
 	const triggerElementRef = useRef<HTMLElement | null>(null);
+	const { paused } = useGlobalPause();
 
 	useEffect(() => {
 		if (open) {
@@ -655,33 +658,36 @@ const TradeDialog: React.FC<TradeDialogProps> = ({
 			>
 				Cancel
 			</Button>
-			<Button
-				type="button"
-				onClick={() => {
-					if (impactWarningActive && !impactAcknowledged) return;
-					if (requireConfirmation) {
-						setConfirmationOpen(true);
-					} else {
-						onConfirm(parsedAmount, pricePreview, slippageBounds);
+			<UnavailableAction disabled={paused} reason="Trading is currently paused">
+				<Button
+					type="button"
+					onClick={() => {
+						if (impactWarningActive && !impactAcknowledged) return;
+						if (requireConfirmation) {
+							setConfirmationOpen(true);
+						} else {
+							onConfirm(parsedAmount, pricePreview, slippageBounds);
+						}
+					}}
+					disabled={
+						!amountValid ||
+						isSubmitting ||
+						(impactWarningActive && !impactAcknowledged) ||
+						(side === 'buy' && (previewLoading || previewError != null)) ||
+						paused
 					}
-				}}
-				disabled={
-					!amountValid ||
-					isSubmitting ||
-					(impactWarningActive && !impactAcknowledged) ||
-					(side === 'buy' && (previewLoading || previewError != null))
-				}
-				aria-busy={isSubmitting || undefined}
-				data-focus-order="3"
-				data-testid="trade-dialog-confirm"
-			>
-				<StableButtonContent
-					isLoading={isSubmitting}
-					loadingLabel="Submitting…"
+					aria-busy={isSubmitting || undefined}
+					data-focus-order="3"
+					data-testid="trade-dialog-confirm"
 				>
-					{confirmLabel}
-				</StableButtonContent>
-			</Button>
+					<StableButtonContent
+						isLoading={isSubmitting}
+						loadingLabel="Submitting…"
+					>
+						{confirmLabel}
+					</StableButtonContent>
+				</Button>
+			</UnavailableAction>
 		</>
 	);
 

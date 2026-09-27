@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import AppErrorBoundary from './components/common/AppErrorBoundary';
 import OfflineBanner from './components/common/OfflineBanner';
+import GlobalPauseBanner from './components/common/GlobalPauseBanner';
 import SessionExpiryWatcher from './components/common/SessionExpiryWatcher';
 import { routes } from './routes';
 import { useRouteChangeLogging } from './hooks/useRouteChangeLogging';
@@ -29,6 +30,7 @@ function App() {
 	return (
 		<AppErrorBoundary>
 			<OfflineBanner />
+			<GlobalPauseBanner />
 			<Toaster
 				toastOptions={{
 					ariaProps: {

@@ -20,6 +20,8 @@ import { isKeyDeprecated } from '@/utils/keyDeprecation.utils';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { Course } from '@/services/course.service';
 import { cn } from '@/lib/utils';
+import { useGlobalPause } from '@/hooks/useGlobalPause';
+import { UnavailableAction } from '@/components/ui/unavailable-action';
 
 export interface PortfolioHoldingRowProps {
 	position: HeldKeyPosition;
@@ -65,6 +67,7 @@ export const PortfolioHoldingRow: React.FC<PortfolioHoldingRowProps> = ({
 	const hasDividends = hasUnclaimedDividend(position.unclaimedDividend);
 	const keyPriceStroops = resolveCreatorKeyPriceStroops(position);
 	const deprecated = isKeyDeprecated(creator);
+	const { paused } = useGlobalPause();
 
 	// #935 — unrealised P&L for this position: what the keys would fetch if sold
 	// at the current bonding-curve sell price, less what was paid for them.
@@ -209,27 +212,31 @@ export const PortfolioHoldingRow: React.FC<PortfolioHoldingRowProps> = ({
 								</Button>
 							)}
 							{onBuy && (
-								<Button
-									size="sm"
-									className="rounded-xl"
-									onClick={() => onBuy(position.creatorId)}
-									disabled={isNetworkMismatch || isSubmitting}
-									data-testid="holding-buy-button"
-								>
-									Buy
-								</Button>
+								<UnavailableAction disabled={paused} reason="Trading is currently paused">
+									<Button
+										size="sm"
+										className="rounded-xl"
+										onClick={() => onBuy(position.creatorId)}
+										disabled={isNetworkMismatch || isSubmitting || paused}
+										data-testid="holding-buy-button"
+									>
+										Buy
+									</Button>
+								</UnavailableAction>
 							)}
 							{onSell && (
-								<Button
-									size="sm"
-									variant="outline"
-									className="rounded-xl"
-									onClick={() => onSell(position.creatorId)}
-									disabled={isLocked || isLiquidEmpty || isNetworkMismatch || isSubmitting}
-									data-testid="holding-sell-button"
-								>
-									Sell
-								</Button>
+								<UnavailableAction disabled={paused} reason="Trading is currently paused">
+									<Button
+										size="sm"
+										variant="outline"
+										className="rounded-xl"
+										onClick={() => onSell(position.creatorId)}
+										disabled={isLocked || isLiquidEmpty || isNetworkMismatch || isSubmitting || paused}
+										data-testid="holding-sell-button"
+									>
+										Sell
+									</Button>
+								</UnavailableAction>
 							)}
 						</>
 					)}
