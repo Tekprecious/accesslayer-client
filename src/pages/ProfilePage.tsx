@@ -22,6 +22,7 @@ import ProtocolRevenueDistributionTable from '@/components/common/ProtocolRevenu
 import WalletActivityFeed from '@/components/common/WalletActivityFeed';
 import TruncatedAddress from '@/components/common/TruncatedAddress';
 import { ProfileTabPillGroup } from '@/components/common/ProfileTabPill';
+import ActivePriceAlertsList from '@/components/common/ActivePriceAlertsList';
 import { useProfileStore } from '@/hooks/useProfileStore';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useWalletHoldings } from '@/hooks/useWallet';

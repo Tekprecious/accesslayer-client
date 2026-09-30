@@ -54,6 +54,7 @@ import KeyBuybackModal from '@/components/common/KeyBuybackModal';
 import type { KeyBuybackReceipt } from '@/hooks/useKeyBuyback';
 import { usePerformanceBond } from '@/hooks/usePerformanceBond';
 import PerformanceBondPanel from '@/components/common/PerformanceBondPanel';
+import PriceAlertButton from '@/components/common/PriceAlertButton';
 
 function CreatorDetailPageContent() {
 	usePurchaseConfetti();
@@ -393,7 +394,14 @@ function CreatorDetailPageContent() {
 						/>
 					</div>
 					<Button
-						disabled={isKeyDeprecated(creator)}
+					<div className="flex items-center gap-2">
+					        <PriceAlertButton
+					                userId={userAddress}
+					                keyId={creator.id}
+					                keyName={creator.title || creator.name || 'Creator Key'}
+					                currentPrice={resolveCreatorKeyPriceStroops(creator) ?? 0}
+					        />
+					        <Button
 						data-testid="key-detail-buy-button"
 						onClick={() => setBuyDialogOpen(true)}
 						variant={isKeyDeprecated(creator) ? 'outline' : 'default'}
