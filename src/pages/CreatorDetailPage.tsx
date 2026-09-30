@@ -55,6 +55,9 @@ import type { KeyBuybackReceipt } from '@/hooks/useKeyBuyback';
 import { usePerformanceBond } from '@/hooks/usePerformanceBond';
 import PerformanceBondPanel from '@/components/common/PerformanceBondPanel';
 import PriceAlertButton from '@/components/common/PriceAlertButton';
+import TradeCooldownButton from '@/components/common/TradeCooldownButton';
+import { useTradeCooldownStatus, resolveActiveTradeCooldown } from '@/hooks/useTradeCooldownStatus';
+import { type ActiveTradeCooldown } from '@/utils/tradeCooldown.utils';
 
 function CreatorDetailPageContent() {
 	usePurchaseConfetti();
@@ -82,7 +85,6 @@ function CreatorDetailPageContent() {
 
 	const recordVisit = useRecentlyViewed(state => state.addKey);
 
-	// Record this key as recently viewed once the detail data is available.
 	useEffect(() => {
 		if (!creator) return;
 		recordVisit({
@@ -100,15 +102,11 @@ function CreatorDetailPageContent() {
 	const { holders, hasNextPage, isFetchingNextPage, fetchNextPage } =
 		useKeyHolders(id || '');
 
-	// User holdings for Share to X button
 	const profile = useProfileStore(state => state.profile);
 	const userAddress = profile?.id;
 	const { data: holdings = [] } = useWalletHoldings(userAddress ?? '');
 	const userPosition = holdings.find(h => h.creatorId === (id || ''));
 	const holdingsCount = userPosition?.quantity ?? 0;
-	// Per-user buy cooldown (#873): prefer the user's own position-level
-	// value; fall back to a creator-wide cooldown if the backend doesn't yet
-	// return a per-user one. Only shown for authenticated users.
 	const nextBuyAllowedAt =
 		userPosition?.nextBuyAllowedAt ?? creator?.nextBuyAllowedAt ?? null;
 	const { data: twap, isLoading: isTwapLoading } = useKeyTwap(id || '');
@@ -119,16 +117,12 @@ function CreatorDetailPageContent() {
 	} = useKeyStats(id || '');
 	const { data: uniqueTraders, isLoading: isUniqueTradersLoading } =
 		useKeyUniqueTraders(id || '');
-	// Live key config powers the bid-ask spread shown next to the buy
-	// action and inside the trade dialog (#951).
 	const { data: keyConfig, isLoading: isKeyConfigLoading } = useKeyConfig(
 		id || ''
 	);
 	const spotPriceStroops = creator
 		? resolveCreatorKeyPriceStroops(creator)
 		: null;
-	// External oracle price shown alongside the bonding-curve spot price so a
-	// significant divergence is visible before trading (#967).
 	const {
 		comparison: oracleComparison,
 		freshness: oracleFreshness,
@@ -136,7 +130,6 @@ function CreatorDetailPageContent() {
 		isLoading: isOracleLoading,
 	} = useKeyOraclePrice(id || '', { spotPriceStroops });
 
-	// Performance bond status for creator key protection (#975)
 	const {
 		data: performanceBondData,
 		isLoading: isPerformanceBondLoading,
@@ -145,7 +138,6 @@ function CreatorDetailPageContent() {
 	const performanceBond =
 		performanceBondData ?? creator?.performanceBond ?? null;
 
-	// Track stale data indicator
 	const { shouldShowBadge, handleRefetch } = useCreatorProfileStaleIndicator(
 		id || '',
 		isFetching,
@@ -155,6 +147,12 @@ function CreatorDetailPageContent() {
 	const [buyDialogOpen, setBuyDialogOpen] = useState(false);
 	const [tradeSubmitting, setTradeSubmitting] = useState(false);
 	const tradeMutation = useTradeMutation(userAddress ?? 'demo-wallet');
+
+	const { data: tradeCooldownStatus } = useTradeCooldownStatus(id || '');
+	const tradeCooldown: ActiveTradeCooldown | null = resolveActiveTradeCooldown(
+		tradeCooldownStatus,
+		nextBuyAllowedAt
+	);
 
 	const handleConfirmBuy = async (
 		amount: number,
@@ -280,7 +278,6 @@ function CreatorDetailPageContent() {
 				recentFeeInflow: creator.recentFeeInflow,
 			}
 		: {
-				// Demo values until the key detail API returns staking pool stats.
 				stakingPoolBalance: 4820,
 				totalStaked: creator.creatorShareSupply
 					? Math.floor(creator.creatorShareSupply / 4)
@@ -296,7 +293,6 @@ function CreatorDetailPageContent() {
 					parentHref="/"
 					currentLabel={`${creator.title} Profile`}
 				/>
-				{/* Key deprecation notice & guaranteed buyback flow (#923) */}
 				{isKeyDeprecated(creator) && (
 					<KeyDeprecationBanner
 						creator={creator}
@@ -306,7 +302,6 @@ function CreatorDetailPageContent() {
 						recentSettlement={recentSettlement}
 					/>
 				)}
-				{/* Merge proposal voting for source key holders (#983) */}
 				<MergeProposalBanner
 					sourceKeyId={id || ''}
 					holdingsCount={holdingsCount}
@@ -341,11 +336,9 @@ function CreatorDetailPageContent() {
 						className="mt-3 shrink-0"
 					/>
 				</div>
-				{/* 4 Stat Cards */}
 				<div data-testid="creator-stat-cards">
 					<CreatorProfileStatRow items={statItems} />
 				</div>
-				{/* Key Stats Panel (#952) */}
 				<KeyStatsPanel
 					stats={keyStats}
 					isLoading={isKeyStatsLoading}
@@ -353,13 +346,11 @@ function CreatorDetailPageContent() {
 					uniqueTraders={uniqueTraders}
 					isUniqueTradersLoading={isUniqueTradersLoading}
 				/>
-				{/* Performance Bond Status Panel (#975) */}
 				<PerformanceBondPanel
 					bond={performanceBond}
 					isLoading={isPerformanceBondLoading}
 					isError={isPerformanceBondError}
 				/>
-				{/* Deprecation Notice and Buy Action on Key Detail Page */}
 				{isKeyDeprecated(creator) && (
 					<div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4">
 						<DeprecationNotice reason={creator.deprecationReason} />
@@ -375,7 +366,6 @@ function CreatorDetailPageContent() {
 								? 'Key is deprecated. New buys are disabled.'
 								: 'Purchase keys for this creator.'}
 						</p>
-						{/* Configurable bid-ask spread between buy and sell price (#951) */}
 						<SpreadIndicator
 							className="mt-2"
 							buyPriceStroops={keyConfig?.buyPriceStroops}
@@ -384,7 +374,6 @@ function CreatorDetailPageContent() {
 							spreadBps={keyConfig?.spreadBps}
 							isLoading={isKeyConfigLoading}
 						/>
-						{/* Oracle reference price next to the curve spot price (#967) */}
 						<OraclePriceIndicator
 							className="mt-2"
 							comparison={oracleComparison}
@@ -393,30 +382,36 @@ function CreatorDetailPageContent() {
 							isLoading={isOracleLoading}
 						/>
 					</div>
-					<Button
 					<div className="flex items-center gap-2">
-					        <PriceAlertButton
-					                userId={userAddress}
-					                keyId={creator.id}
-					                keyName={creator.title || creator.name || 'Creator Key'}
-					                currentPrice={resolveCreatorKeyPriceStroops(creator) ?? 0}
-					        />
-					        <Button
-						data-testid="key-detail-buy-button"
-						onClick={() => setBuyDialogOpen(true)}
-						variant={isKeyDeprecated(creator) ? 'outline' : 'default'}
-						className="rounded-xl font-bold"
-					>
-						{isKeyDeprecated(creator)
-							? 'Buy Disabled (Deprecated)'
-							: 'Buy Key'}
-					</Button>
+						<PriceAlertButton
+							userId={userAddress}
+							keyId={creator.id}
+							keyName={creator.title || creator.name || 'Creator Key'}
+							currentPrice={resolveCreatorKeyPriceStroops(creator) ?? 0}
+						/>
+						{isKeyDeprecated(creator) ? (
+							<Button
+								disabled
+								data-testid="key-detail-buy-button"
+								variant="outline"
+								className="min-h-11 w-full rounded-xl font-bold sm:h-10 sm:min-h-0 sm:w-auto"
+							>
+								Buy Disabled (Deprecated)
+							</Button>
+						) : (
+							<TradeCooldownButton
+								cooldown={tradeCooldown}
+								label="Buy Key"
+								className="min-h-11 w-full rounded-xl font-bold sm:h-10 sm:min-h-0 sm:w-auto"
+								onClick={() => setBuyDialogOpen(true)}
+								buttonProps={{ 'data-testid': 'key-detail-buy-button' }}
+							/>
+						)}
+					</div>
 				</div>
-				{/* Buy Cooldown Countdown (only meaningful for authenticated users) */}
 				{userAddress && (
 					<BuyCooldownCountdown nextBuyAllowedAt={nextBuyAllowedAt} />
 				)}
-				{/* Share to X Button (only visible for authenticated holders) */}
 				<div className="flex justify-end">
 					<ShareTwitterButton
 						creatorId={creator.id}
@@ -486,9 +481,7 @@ function CreatorDetailPageContent() {
 						</div>
 					</div>
 				) : null}
-				{/* Staking Rewards */}
 				<StakingRewardsSection {...stakingStats} isLoading={isLoading} />
-				{/* Price Chart */}
 				<div
 					className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 shadow-2xl backdrop-blur-md md:p-8"
 					data-testid="creator-chart-container"
@@ -502,13 +495,11 @@ function CreatorDetailPageContent() {
 						height={300}
 					/>
 				</div>
-				{/* Buy Simulation Tool */}
 				<KeySimulationTool
 					currentSupply={creator.creatorShareSupply ?? 100}
 					protocolFeeBps={creator.protocolFeeBps}
 					creatorFeeBps={creator.creatorFeeBps}
 				/>
-				{/* Holder Concentration */}
 				<div
 					className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 shadow-2xl backdrop-blur-md md:p-8"
 					data-testid="holder-concentration-container"
@@ -521,7 +512,6 @@ function CreatorDetailPageContent() {
 						totalSupply={creator.creatorShareSupply}
 					/>
 				</div>
-				{/* Fee Structure */}
 				<div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 shadow-2xl backdrop-blur-md md:p-8">
 					<div className="flex items-center justify-between gap-4 mb-6">
 						<h2 className="font-grotesque text-xl font-black tracking-tight text-white">
@@ -535,7 +525,6 @@ function CreatorDetailPageContent() {
 					</div>
 					<CreatorProfileInfoGrid items={feeItems} />
 				</div>
-				{/* Co-Creator Section */}{' '}
 				<CoCreatorSection
 					courseId={creator.id}
 					coCreatorAddress={creator.coCreatorAddress}
@@ -543,7 +532,6 @@ function CreatorDetailPageContent() {
 					totalPaidToCoCreator={creator.totalPaidToCoCreator}
 					totalPaidToCreator={creator.totalPaidToCreator}
 				/>
-				{/* Key Holders */}
 				<div
 					data-testid="creator-holders-container"
 					className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 shadow-2xl backdrop-blur-md md:p-8"
@@ -566,7 +554,6 @@ function CreatorDetailPageContent() {
 					</h2>
 					<CreatorActivityFeed creatorId={creator.id} />
 				</div>
-				{/* Key Buyback Modal (#923) */}
 				{isKeyDeprecated(creator) && (
 					<KeyBuybackModal
 						open={buybackModalOpen}
