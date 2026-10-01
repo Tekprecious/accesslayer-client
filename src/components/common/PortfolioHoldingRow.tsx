@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import LockupCountdown from '@/components/common/LockupCountdown';
-import TradeCooldownButton from '@/components/common/TradeCooldownButton';
 import ReinvestDividendDialog from '@/components/common/ReinvestDividendDialog';
 import DeprecationNotice from '@/components/common/DeprecationNotice';
 import RedeemKeyDialog from '@/components/common/RedeemKeyDialog';
@@ -18,8 +17,7 @@ import {
 } from '@/utils/portfolioValue.utils';
 import { hasUnclaimedDividend, xlmToStroops } from '@/utils/reinvestDividend.utils';
 import { isKeyDeprecated } from '@/utils/keyDeprecation.utils';
-import { isActiveCooldown } from '@/utils/tradeCooldown.utils';
-import type { ActiveTradeCooldown } from '@/utils/tradeCooldown.utils';
+
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { Course } from '@/services/course.service';
 import { cn } from '@/lib/utils';
@@ -41,11 +39,7 @@ export interface PortfolioHoldingRowProps {
 	isReinvesting?: boolean;
 	isRedeeming?: boolean;
 	isNetworkMismatch?: boolean;
-	/**
-	 * Active trade cooldown for this key (#998). When present, the Buy and
-	 * Sell buttons are replaced by a disabled countdown until it expires.
-	 */
-	tradeCooldown?: ActiveTradeCooldown | null;
+
 }
 
 export const PortfolioHoldingRow: React.FC<PortfolioHoldingRowProps> = ({
@@ -63,7 +57,6 @@ export const PortfolioHoldingRow: React.FC<PortfolioHoldingRowProps> = ({
 	isReinvesting = false,
 	isRedeeming = false,
 	isNetworkMismatch = false,
-	tradeCooldown = null,
 }) => {
 	const initialRemaining = computeRemainingLockupSeconds(position.last_buy_timestamp);
 	const [isLocked, setIsLocked] = useState(initialRemaining > 0);
@@ -97,9 +90,6 @@ export const PortfolioHoldingRow: React.FC<PortfolioHoldingRowProps> = ({
 
 	// #998 — the per-key trade cooldown disables both buy and sell for the
 	// window configured by the creator; the countdown drives the labels.
-	const tradeCooldownActive = isActiveCooldown(tradeCooldown)
-		? (tradeCooldown as ActiveTradeCooldown)
-		: null;
 
 	const handleConfirmReinvest = async () => {
 		if (!onReinvest) return;

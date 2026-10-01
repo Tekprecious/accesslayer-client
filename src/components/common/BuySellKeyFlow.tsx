@@ -18,6 +18,8 @@ import {
 	calculateTradePriceImpact,
 	isHighPriceImpact,
 } from '@/utils/priceImpact.utils';
+import CircuitBreakerStatusIndicator from '@/components/common/CircuitBreakerStatusIndicator';
+import { evaluateCircuitBreakerStatus } from '@/utils/circuitBreaker.utils';
 import { calculateLaunchPenalty } from '@/utils/launchPenalty.utils';
 import {
 	calculateFeeBreakdown,
@@ -661,7 +663,7 @@ export const BuySellKeyFlow: React.FC<BuySellKeyFlowProps> = ({
 					)}
 				>
 					<span className="flex items-center justify-center gap-1.5">
-						{side === 'buy' ? 'Review Buy Order' : 'Review Sell Order'}
+						{reviewButtonLabel}
 						<ArrowRight className="h-4 w-4" />
 					</span>
 				</Button>

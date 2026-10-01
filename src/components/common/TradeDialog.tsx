@@ -70,11 +70,14 @@ import {
 	computeSlippageBounds,
 	type SlippageBounds,
 } from '@/utils/slippageTolerance.utils';
-import type { KeyConfig } from '@/services/course.service';
-import SpreadIndicator from '@/components/common/SpreadIndicator';
-import { useSlippageTolerancePreference } from '@/hooks/useSlippageTolerancePreference';
 import { useGlobalPause } from '@/hooks/useGlobalPause';
 import { UnavailableAction } from '@/components/ui/unavailable-action';
+import { useContractPausedStore, selectIsPaused } from '@/hooks/useContractPausedStore';
+import { useAllowanceStore, selectNeedsApproval } from '@/hooks/useAllowanceStore';
+import { useShallow } from 'zustand/react/shallow';
+import { useHoldingCapStore, isAtHoldingCap, remainingCapacity } from '@/hooks/useHoldingCapStore';
+
+export type TradeSide = 'buy' | 'sell' | 'stake' | 'transfer';
 
 /**
  * Merges contract-returned dynamic fee rates over the dialog's configured
@@ -1076,18 +1079,10 @@ const TradeDialog: React.FC<TradeDialogProps> = ({
 			<UnavailableAction disabled={paused} reason="Trading is currently paused">
 				<Button
 					type="button"
-					onClick={() => {
-						if (impactWarningActive && !impactAcknowledged) return;
-						if (requireConfirmation) {
-							setConfirmationOpen(true);
-						} else {
-							onConfirm(parsedAmount, pricePreview, slippageBounds);
-						}
-					}}
+					onClick={handleConfirm}
 					disabled={
 						!amountValid ||
 						isSubmitting ||
-						(impactWarningActive && !impactAcknowledged) ||
 						(side === 'buy' && (previewLoading || previewError != null)) ||
 						paused
 					}
