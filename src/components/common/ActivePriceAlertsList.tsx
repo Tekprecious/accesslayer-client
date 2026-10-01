@@ -1,6 +1,6 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useActivePriceAlerts, useDeletePriceAlert, useUpdatePriceAlert } from '@/hooks/usePriceAlerts';
-import { PriceAlertModal } from './PriceAlertModal';
+import PriceAlertModal from './PriceAlertModal';
 import { Button } from '@/components/ui/button';
 import type { PriceAlert } from '@/services/alert.service';
 
@@ -122,7 +122,7 @@ export function ActivePriceAlertsList({ userId, resolveCurrentPrice }: ActivePri
                         {editing && (
                                 <PriceAlertModal
                                         open={Boolean(editing)}
-                                        onOpenChange={open => {
+                                        onOpenChange={(open: boolean) => {
                                                 if (!open) setEditing(null);
                                         }}
                                         keyId={editing.keyId}

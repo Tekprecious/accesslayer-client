@@ -1,7 +1,7 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PriceAlertModal } from './PriceAlertModal';
+import PriceAlertModal from './PriceAlertModal';
 import { useCreatePriceAlert } from '@/hooks/usePriceAlerts';
 
 export interface PriceAlertButtonProps {

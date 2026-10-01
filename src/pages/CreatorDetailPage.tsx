@@ -55,9 +55,6 @@ import type { KeyBuybackReceipt } from '@/hooks/useKeyBuyback';
 import { usePerformanceBond } from '@/hooks/usePerformanceBond';
 import PerformanceBondPanel from '@/components/common/PerformanceBondPanel';
 import PriceAlertButton from '@/components/common/PriceAlertButton';
-import TradeCooldownButton from '@/components/common/TradeCooldownButton';
-import { useTradeCooldownStatus, resolveActiveTradeCooldown } from '@/hooks/useTradeCooldownStatus';
-import { type ActiveTradeCooldown } from '@/utils/tradeCooldown.utils';
 
 function CreatorDetailPageContent() {
 	usePurchaseConfetti();
@@ -147,12 +144,6 @@ function CreatorDetailPageContent() {
 	const [buyDialogOpen, setBuyDialogOpen] = useState(false);
 	const [tradeSubmitting, setTradeSubmitting] = useState(false);
 	const tradeMutation = useTradeMutation(userAddress ?? 'demo-wallet');
-
-	const { data: tradeCooldownStatus } = useTradeCooldownStatus(id || '');
-	const tradeCooldown: ActiveTradeCooldown | null = resolveActiveTradeCooldown(
-		tradeCooldownStatus,
-		nextBuyAllowedAt
-	);
 
 	const handleConfirmBuy = async (
 		amount: number,
@@ -389,24 +380,15 @@ function CreatorDetailPageContent() {
 							keyName={creator.title || creator.name || 'Creator Key'}
 							currentPrice={resolveCreatorKeyPriceStroops(creator) ?? 0}
 						/>
-						{isKeyDeprecated(creator) ? (
-							<Button
-								disabled
-								data-testid="key-detail-buy-button"
-								variant="outline"
-								className="min-h-11 w-full rounded-xl font-bold sm:h-10 sm:min-h-0 sm:w-auto"
-							>
-								Buy Disabled (Deprecated)
-							</Button>
-						) : (
-							<TradeCooldownButton
-								cooldown={tradeCooldown}
-								label="Buy Key"
-								className="min-h-11 w-full rounded-xl font-bold sm:h-10 sm:min-h-0 sm:w-auto"
-								onClick={() => setBuyDialogOpen(true)}
-								buttonProps={{ 'data-testid': 'key-detail-buy-button' }}
-							/>
-						)}
+						<Button
+							disabled={isKeyDeprecated(creator)}
+							data-testid="key-detail-buy-button"
+							onClick={() => setBuyDialogOpen(true)}
+							variant={isKeyDeprecated(creator) ? 'outline' : 'default'}
+							className="min-h-11 w-full rounded-xl font-bold sm:h-10 sm:min-h-0 sm:w-auto"
+						>
+							{isKeyDeprecated(creator) ? 'Buy Disabled (Deprecated)' : 'Buy Key'}
+						</Button>
 					</div>
 				</div>
 				{userAddress && (
