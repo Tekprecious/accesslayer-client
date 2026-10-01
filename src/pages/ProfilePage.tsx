@@ -23,6 +23,7 @@ import WalletActivityFeed from '@/components/common/WalletActivityFeed';
 import SectionErrorBoundary from '@/components/common/SectionErrorBoundary';
 import TruncatedAddress from '@/components/common/TruncatedAddress';
 import { ProfileTabPillGroup } from '@/components/common/ProfileTabPill';
+import ActivePriceAlertsList from '@/components/common/ActivePriceAlertsList';
 import { useProfileStore } from '@/hooks/useProfileStore';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useWalletHoldings } from '@/hooks/useWallet';
@@ -552,6 +553,21 @@ export default function ProfilePage() {
 							</SectionErrorBoundary>
 						</div>
 					</section>
+				)}
+
+				{/* Price alerts panel (#1057) */}
+				{activeTab === 'price-alerts' && (
+				        <section
+				                id="profile-panel-price-alerts"
+				                role="tabpanel"
+				                aria-labelledby="profile-tab-price-alerts"
+				                data-testid="portfolio-price-alerts-panel"
+				        >
+				                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8">
+				                        <h2 className="font-grotesque text-2xl font-bold text-white mb-6">Price Alerts</h2>
+				                        <ActivePriceAlertsList userId={profileWallet} />
+				                </div>
+				        </section>
 				)}
 
 				{/* Activity feed panel */}
