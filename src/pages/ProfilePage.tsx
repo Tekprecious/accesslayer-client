@@ -10,11 +10,14 @@ import {
 	Coins,
 	Activity,
 	ArrowLeftRight,
+	Droplets,
+	Hourglass,
 } from 'lucide-react';
 import ReferralLinkPanel from '@/components/common/ReferralLinkPanel';
 import PortfolioSummaryHeader from '@/components/common/PortfolioSummaryHeader';
 import HeldKeysGrid from '@/components/common/HeldKeysGrid';
 import StakingPositionsList from '@/components/common/StakingPositionsList';
+import LiquidityPositionsSection from '@/components/common/LiquidityPositionsSection';
 import TradeHistoryTable from '@/components/common/TradeHistoryTable';
 import AtomicSwapHistory from '@/components/common/AtomicSwapHistory';
 import ProtocolRevenueClaim from '@/components/common/ProtocolRevenueClaim';
@@ -38,10 +41,13 @@ import {
 } from '@/utils/portfolioValue.utils';
 import { computeStakingPortfolioValueStroops } from '@/utils/stakingPositions.utils';
 import { cn } from '@/lib/utils';
+import VestingPositionsSection from '@/components/common/VestingPositionsSection';
 
 const TABS = [
 	{ label: 'Holdings', value: 'holdings', icon: <BarChart2 /> },
+	{ label: 'Vesting', value: 'vesting', icon: <Hourglass /> },
 	{ label: 'Staking', value: 'staking', icon: <Coins /> },
+	{ label: 'Liquidity', value: 'liquidity', icon: <Droplets /> },
 	{ label: 'Trade History', value: 'trade-history', icon: <Clock /> },
 	{ label: 'Atomic Swaps', value: 'atomic-swaps', icon: <ArrowLeftRight /> },
 	{ label: 'Activity', value: 'activity', icon: <Activity /> },
@@ -156,6 +162,19 @@ export default function ProfilePage() {
 			),
 		[holdingsQuery.data, creators]
 	);
+
+	const heldKeyIds = useMemo(
+		() => [...new Set((holdingsQuery.data ?? []).map(h => h.creatorId))],
+		[holdingsQuery.data]
+	);
+	const heldKeyNames = useMemo(() => {
+		const map: Record<string, string | undefined> = {};
+		for (const holding of holdingsQuery.data ?? []) {
+			map[holding.creatorId] =
+				creators.find(c => c.id === holding.creatorId)?.title;
+		}
+		return map;
+	}, [holdingsQuery.data, creators]);
 
 	const stakingPositions = useMemo(
 		() =>
@@ -326,6 +345,31 @@ export default function ProfilePage() {
 					</section>
 				)}
 
+				{/* Vesting schedules panel (#1018) */}
+				{activeTab === 'vesting' && (
+					<div
+						id="profile-panel-vesting"
+						role="tabpanel"
+						aria-labelledby="profile-tab-vesting"
+						data-testid="portfolio-vesting-panel"
+					>
+						<div className="mb-6">
+							<h2 className="font-grotesque text-xl font-bold text-white">
+								Vesting Schedules
+							</h2>
+							<p className="mt-1 text-sm text-white/60">
+								Reserved key allocations unlocking on a cliff-then-linear
+								schedule. Claim vested amounts once the cliff passes.
+							</p>
+						</div>
+						<VestingPositionsSection
+							wallet={profileWallet}
+							keyIds={heldKeyIds}
+							keyNames={heldKeyNames}
+						/>
+					</div>
+				)}
+
 				{/* Staking panel */}
 				{activeTab === 'staking' && (
 					<section
@@ -428,6 +472,20 @@ export default function ProfilePage() {
 							</>
 						)}
 					</section>
+				)}
+
+				{/* Liquidity provider panel (#1030) */}
+				{activeTab === 'liquidity' && (
+					<div
+						id="profile-panel-liquidity"
+						role="tabpanel"
+						aria-labelledby="profile-tab-liquidity"
+						data-testid="portfolio-liquidity-panel"
+					>
+						<LiquidityPositionsSection
+							publicWallet={publicWallet?.trim() || undefined}
+						/>
+					</div>
 				)}
 
 				{/* Trade history panel */}
