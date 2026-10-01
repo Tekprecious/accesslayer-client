@@ -62,6 +62,10 @@ import WalletConnectCalloutBanner from '@/components/common/WalletConnectCallout
 import NetworkMismatchBanner from '@/components/common/NetworkMismatchBanner';
 import CreatorSocialLinksList from '@/components/common/CreatorSocialLinksList';
 import TransactionStatusIcon from '@/components/common/TransactionStatusIcon';
+import {
+	useContractPausedStore,
+	selectIsPaused,
+} from '@/hooks/useContractPausedStore';
 import { buildStellarExpertTxUrl, truncateTxHash } from '@/constants/stellar';
 import { env } from '@/utils/env.utils';
 import MiniStatChip from '@/components/common/MiniStatChip';
@@ -121,6 +125,7 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
 	}, [address, setConnectedWalletKey]);
 	const { isMismatch: isNetworkMismatch, expectedChainName } =
 		useNetworkMismatch();
+	const isPaused = useContractPausedStore(selectIsPaused);
 	const [transactionState, setTransactionState] = useState<
 		'idle' | 'submitting' | 'failed' | 'success'
 	>('idle');
@@ -231,6 +236,16 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
 	};
 
 	const handleBuy = useCallback(() => {
+		if (isPaused) {
+			toast.error('Trading is suspended: contract is paused');
+			return;
+		}
+
+		if (isKeyDeprecated(creator)) {
+			toast.error('This key has been deprecated and can no longer be bought');
+			return;
+		}
+
 		if (!isConnected) {
 			toast.error('Please connect your wallet to purchase keys', {
 				duration: 4000,
@@ -251,6 +266,8 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
 		// Implementation for contract interaction would go here
 		runPurchaseAttempt();
 	}, [
+		isPaused,
+		creator,
 		isConnected,
 		isNetworkMismatch,
 		expectedChainName,
@@ -703,13 +720,48 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
 										: 'Buy Key'}
 					</AsyncButton>
 				</div>
+				<AsyncButton
+					onClick={handleBuy}
+					variant={isConnected ? 'default' : 'outline'}
+					size="sm"
+					isPending={transactionState === 'submitting'}
+					pendingText="Processing..."
+					disabled={isNetworkMismatch || isPaused || isKeyDeprecated(creator)}
+					title={isPaused ? 'Trading suspended: contract is paused' : undefined}
+					className={cn(
+						'rounded-xl font-bold',
+						!isConnected && 'border-white/10  hover:bg-white/5'
+					)}
+				>
+					{transactionState === 'success' && (
+						<TransactionStatusIcon status="success" />
+					)}
+					{transactionState === 'submitting' && (
+						<TransactionStatusIcon status="pending" />
+					)}
+					{transactionState === 'failed' && (
+						<TransactionStatusIcon status="failed" />
+					)}
+					<ShoppingCart className="creator-action-icon" />
+					{isKeyDeprecated(creator)
+						? 'Key Deprecated'
+						: transactionState === 'submitting'
+							? 'Processing...'
+							: transactionState === 'success'
+								? 'Completed'
+								: transactionState === 'failed'
+									? 'Retry Purchase'
+									: 'Buy Key'}
+				</AsyncButton>
 			</div>
 
 			<BuyActionHelperText
 				state={transactionState}
 				className="mt-4"
 				disabledReason={
-					isKeyDeprecated(creator)
+					isPaused
+						? 'Trading is currently suspended because the contract is paused.'
+						: isKeyDeprecated(creator)
 						? 'This key has been deprecated and can no longer be bought.'
 						: isNetworkMismatch
 							? `Switch to ${expectedChainName} to enable purchases.`
