@@ -4,22 +4,20 @@ The treasury panel calls the authenticated backend API; this client repository d
 
 All routes use the existing `BaseApiService` credentials and return the standard `{ success, data, message }` envelope.
 
-| Method | Route | `data` |
-| --- | --- | --- |
-| `GET` | `/admin/treasury` | `{ accumulatedFeesStroops: string, updatedAt?: string }` |
-| `GET` | `/admin/treasury/distributions` | `TreasuryDistribution[]` |
-| `GET` | `/admin/treasury/fees` | Recent `FeeCollected` records, newest first |
-| `POST` | `/admin/treasury/distributions` | Confirmed `{ epoch: number, transactionHash: string }` |
+| Method | Route                           | `data`                                                   |
+| ------ | ------------------------------- | -------------------------------------------------------- |
+| `GET`  | `/admin/treasury`               | `{ accumulatedFeesStroops: string, updatedAt?: string }` |
+| `GET`  | `/admin/treasury/distributions` | `TreasuryDistribution[]`                                 |
+| `GET`  | `/admin/treasury/fees`          | Recent `FeeCollected` records, newest first              |
+| `POST` | `/admin/treasury/distributions` | Confirmed `{ epoch: number, transactionHash: string }`   |
 
 Distribution request body:
 
 ```json
 {
-  "admin": "G...",
-  "totalAmountStroops": "10000000",
-  "recipients": [
-    { "address": "G...", "amountStroops": "10000000" }
-  ]
+	"admin": "G...",
+	"totalAmountStroops": "10000000",
+	"recipients": [{ "address": "G...", "amountStroops": "10000000" }]
 }
 ```
 
