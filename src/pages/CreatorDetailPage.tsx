@@ -283,8 +283,6 @@ function CreatorDetailPageContent() {
 		}
 	);
 
-	const showStaleIndicator = shouldShowBadge || isFallbackActive;
-
 	const tradeMutation = useTradeMutation(connectedWalletAddress ?? '');
 
 	const { data: tradeCooldownStatus } = useTradeCooldownStatus(id || '');
